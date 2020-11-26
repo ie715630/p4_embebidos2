@@ -25,6 +25,10 @@ uint8_t init_codec_i2s() {
        return_value = 0;
     }
 
+    i2c_data[0] = ANALOGUE_AUDIO;
+    i2c_data[1] = (1<<1) || (1<<4); // DACSEL
+    i2c_multiple_write(DEVICE_ADDR, i2c_data, 2);
+
     uint8_t db = 0; //0x00 (-34.5) - 0x1F (12)
     db = (db+34.5)/1.5;
     i2c_data[0] = LEFT_LINE_IN;
@@ -43,6 +47,8 @@ uint8_t init_codec_i2s() {
     i2c_data[0] = 0xC;
 	i2c_data[1] = 0x00;
 	i2c_multiple_write(DEVICE_ADDR, i2c_data, 2);
+
+	return return_value;
 }
 
 uint8_t init_codec_bypass()
