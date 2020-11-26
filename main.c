@@ -113,74 +113,7 @@ int main(void) {
     BOARD_InitBootPeripherals();
     BOARD_InitDebugConsole();
 
-    edma_config_t dmaConfig = {0};
-    sai_transceiver_t config;
 
-    /* Init DMAMUX */
-    DMAMUX_Init(DEMO_DMAMUX);
-    DMAMUX_SetSource(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_TX_SOURCE);
-    DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL);
-    DMAMUX_SetSource(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_RX_SOURCE);
-    DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL);
-
-    PRINTF("SAI example started!\n\r");
-
-    /* Init DMA and create handle for DMA */
-    EDMA_GetDefaultConfig(&dmaConfig);
-    EDMA_Init(DEMO_DMA, &dmaConfig);
-    EDMA_CreateHandle(&dmaTxHandle, DEMO_DMA, DEMO_TX_EDMA_CHANNEL);
-    EDMA_CreateHandle(&dmaRxHandle, DEMO_DMA, DEMO_RX_EDMA_CHANNEL);
-#if defined(FSL_FEATURE_EDMA_HAS_CHANNEL_MUX) && FSL_FEATURE_EDMA_HAS_CHANNEL_MUX
-    EDMA_SetChannelMux(DEMO_DMA, DEMO_TX_EDMA_CHANNEL, DEMO_SAI_TX_EDMA_CHANNEL);
-    EDMA_SetChannelMux(DEMO_DMA, DEMO_RX_EDMA_CHANNEL, DEMO_SAI_RX_EDMA_CHANNEL);
-#endif
-
-    /* SAI init */
-    SAI_Init(DEMO_SAI);
-
-    SAI_TransferTxCreateHandleEDMA(DEMO_SAI, &txHandle, tx_callback, NULL, &dmaTxHandle);
-    SAI_TransferRxCreateHandleEDMA(DEMO_SAI, &rxHandle, rx_callback, NULL, &dmaRxHandle);
-
-    /* I2S mode configurations */
-    SAI_GetClassicI2SConfig(&config, DEMO_AUDIO_BIT_WIDTH, kSAI_Stereo, 1U << DEMO_SAI_CHANNEL);
-    config.syncMode    = DEMO_SAI_TX_SYNC_MODE;
-    config.masterSlave = DEMO_SAI_MASTER_SLAVE;
-    SAI_TransferTxSetConfigEDMA(DEMO_SAI, &txHandle, &config);
-    config.syncMode = DEMO_SAI_RX_SYNC_MODE;
-    SAI_TransferRxSetConfigEDMA(DEMO_SAI, &rxHandle, &config);
-
-    port_pin_config_t config_pin;
-    config_pin.slewRate = 1;
-    config_pin.pullSelect = 2;
-//    config.mux = kPORT_MuxAlt5;
-
-    CLOCK_EnableClock(kCLOCK_PortE);
-    CLOCK_EnableClock(kCLOCK_PortC);
-//    PORT_SetPinMux(PORTC, 1, kPORT_MuxAlt6); // TXD0
-//    PORT_SetPinMux(PORTC, 5, kPORT_MuxAlt4); // RXD0
-//    PORT_SetPinMux(PORTC, 6, kPORT_MuxAlt6); // MCLK
-//    PORT_SetPinMux(PORTE, 11, kPORT_MuxAlt4); // TX_FS
-//    PORT_SetPinMux(PORTE, 12, kPORT_MuxAlt4); // TX_BCLK
-
-    config_pin.mux = kPORT_MuxAlt6;
-    PORT_SetPinConfig(PORTC, 1, &config_pin); //TXD0
-    config_pin.mux = kPORT_MuxAlt4;
-    PORT_SetPinConfig(PORTC, 5, &config_pin); //RXD0
-    config_pin.mux = kPORT_MuxAlt6;
-    PORT_SetPinConfig(PORTC, 6, &config_pin); //MCLK
-    config_pin.mux = kPORT_MuxAlt4;
-    PORT_SetPinConfig(PORTE, 11, &config_pin); //TX_FS
-    config_pin.mux = kPORT_MuxAlt4;
-    PORT_SetPinConfig(PORTE, 12, &config_pin); //TX_BCLK
-
-    /* set bit clock divider */
-    SAI_TxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
-            DEMO_AUDIO_DATA_CHANNEL);
-    SAI_RxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
-            DEMO_AUDIO_DATA_CHANNEL);
-
-    /* master clock configurations */
-    BOARD_MASTER_CLOCK_CONFIG();
 
     modules_initialized= xSemaphoreCreateBinary();
 
@@ -209,6 +142,75 @@ void init_modules(void * params) {
     else {
         PRINTF("Success");
     }
+
+    edma_config_t dmaConfig = {0};
+        sai_transceiver_t config;
+
+        /* Init DMAMUX */
+        DMAMUX_Init(DEMO_DMAMUX);
+        DMAMUX_SetSource(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_TX_SOURCE);
+        DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL);
+        DMAMUX_SetSource(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_RX_SOURCE);
+        DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL);
+
+        PRINTF("SAI example started!\n\r");
+
+        /* Init DMA and create handle for DMA */
+        EDMA_GetDefaultConfig(&dmaConfig);
+        EDMA_Init(DEMO_DMA, &dmaConfig);
+        EDMA_CreateHandle(&dmaTxHandle, DEMO_DMA, DEMO_TX_EDMA_CHANNEL);
+        EDMA_CreateHandle(&dmaRxHandle, DEMO_DMA, DEMO_RX_EDMA_CHANNEL);
+    #if defined(FSL_FEATURE_EDMA_HAS_CHANNEL_MUX) && FSL_FEATURE_EDMA_HAS_CHANNEL_MUX
+        EDMA_SetChannelMux(DEMO_DMA, DEMO_TX_EDMA_CHANNEL, DEMO_SAI_TX_EDMA_CHANNEL);
+        EDMA_SetChannelMux(DEMO_DMA, DEMO_RX_EDMA_CHANNEL, DEMO_SAI_RX_EDMA_CHANNEL);
+    #endif
+
+        /* SAI init */
+        SAI_Init(DEMO_SAI);
+
+        SAI_TransferTxCreateHandleEDMA(DEMO_SAI, &txHandle, tx_callback, NULL, &dmaTxHandle);
+        SAI_TransferRxCreateHandleEDMA(DEMO_SAI, &rxHandle, rx_callback, NULL, &dmaRxHandle);
+
+        /* I2S mode configurations */
+        SAI_GetClassicI2SConfig(&config, DEMO_AUDIO_BIT_WIDTH, kSAI_Stereo, 1U << DEMO_SAI_CHANNEL);
+        config.syncMode    = DEMO_SAI_TX_SYNC_MODE;
+        config.masterSlave = DEMO_SAI_MASTER_SLAVE;
+        SAI_TransferTxSetConfigEDMA(DEMO_SAI, &txHandle, &config);
+        config.syncMode = DEMO_SAI_RX_SYNC_MODE;
+        SAI_TransferRxSetConfigEDMA(DEMO_SAI, &rxHandle, &config);
+
+        port_pin_config_t config_pin;
+        config_pin.slewRate = 1;
+        config_pin.pullSelect = 2;
+    //    config.mux = kPORT_MuxAlt5;
+
+        CLOCK_EnableClock(kCLOCK_PortE);
+        CLOCK_EnableClock(kCLOCK_PortC);
+    //    PORT_SetPinMux(PORTC, 1, kPORT_MuxAlt6); // TXD0
+    //    PORT_SetPinMux(PORTC, 5, kPORT_MuxAlt4); // RXD0
+    //    PORT_SetPinMux(PORTC, 6, kPORT_MuxAlt6); // MCLK
+    //    PORT_SetPinMux(PORTE, 11, kPORT_MuxAlt4); // TX_FS
+    //    PORT_SetPinMux(PORTE, 12, kPORT_MuxAlt4); // TX_BCLK
+
+        config_pin.mux = kPORT_MuxAlt6;
+        PORT_SetPinConfig(PORTC, 1, &config_pin); //TXD0
+        config_pin.mux = kPORT_MuxAlt4;
+        PORT_SetPinConfig(PORTC, 5, &config_pin); //RXD0
+        config_pin.mux = kPORT_MuxAlt6;
+        PORT_SetPinConfig(PORTC, 6, &config_pin); //MCLK
+        config_pin.mux = kPORT_MuxAlt4;
+        PORT_SetPinConfig(PORTE, 11, &config_pin); //TX_FS
+        config_pin.mux = kPORT_MuxAlt4;
+        PORT_SetPinConfig(PORTE, 12, &config_pin); //TX_BCLK
+
+        /* set bit clock divider */
+        SAI_TxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
+                DEMO_AUDIO_DATA_CHANNEL);
+        SAI_RxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
+                DEMO_AUDIO_DATA_CHANNEL);
+
+        /* master clock configurations */
+        BOARD_MASTER_CLOCK_CONFIG();
 
     xSemaphoreGive(modules_initialized);
     vTaskSuspend(NULL);
