@@ -32,7 +32,7 @@ typedef struct
     uint8_t pin_mux;				/**Pin Configuration*/
 }rtos_i2c_config_t;
 
-freertos_i2c_flag_t init_i2c0_with_default_config(void);
+freertos_i2c_flag_t init_i2c1_with_default_config(void);
 
 void fsl_i2c_callback(I2C_Type *base, i2c_master_handle_t *handle,
         status_t status, void *userData);

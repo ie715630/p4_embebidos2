@@ -25,7 +25,6 @@
 /* TODO: insert other definitions and declarations here. */
 
 /* SAI and I2C instance and clock */
-#define DEMO_CODEC_DA7212
 #define DEMO_SAI              I2S0
 #define DEMO_SAI_CHANNEL      (0)
 #define DEMO_SAI_CLKSRC       kCLOCK_CoreSysClk
@@ -47,12 +46,12 @@
 
 #define DEMO_AUDIO_DATA_CHANNEL (1U)
 #define DEMO_AUDIO_BIT_WIDTH    kSAI_WordWidth16bits
-#define DEMO_AUDIO_SAMPLE_RATE  (kSAI_SampleRate16KHz)
+#define DEMO_AUDIO_SAMPLE_RATE  (3000)
 #define DEMO_AUDIO_MASTER_CLOCK 12288000U
 
 #define BOARD_MASTER_CLOCK_CONFIG BOARD_MasterClockConfig
 #define BUFFER_SIZE   (1024U)
-#define BUFFER_NUMBER (4U)
+#define BUFFER_NUMBER (2U) // 2 for TX 2 for RX
 
 void BOARD_MasterClockConfig(void);
 
@@ -80,7 +79,7 @@ static void rx_callback(I2S_Type *base, sai_edma_handle_t *handle, status_t stat
 {
     if (kStatus_SAI_RxError == status)
     {
-        /* Handle the error. */
+        /* Handle the error. */ // Should be used to ping and pong Make a task that when ping is filled empty pong
     }
     else
     {
@@ -113,8 +112,6 @@ int main(void) {
     BOARD_InitBootPeripherals();
     BOARD_InitDebugConsole();
 
-
-
     modules_initialized= xSemaphoreCreateBinary();
 
     xTaskCreate(init_modules, "Init", 300, NULL, 1, NULL);
@@ -130,87 +127,66 @@ int main(void) {
 
 void init_modules(void * params) {
 
-    init_i2c0_with_default_config();
+    init_i2c1_with_default_config();
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    // uint8_t init_success = init_codec();
     uint8_t init_success = init_codec_i2s();
-
     if (!init_success) {
-        PRINTF("Init error");
+        PRINTF("Init error\n\r");
     }
     else {
-        PRINTF("Success");
+        PRINTF("Success\n\r");
     }
 
     edma_config_t dmaConfig = {0};
-        sai_transceiver_t config;
+    sai_transceiver_t config;
 
-        /* Init DMAMUX */
-        DMAMUX_Init(DEMO_DMAMUX);
-        DMAMUX_SetSource(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_TX_SOURCE);
-        DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL);
-        DMAMUX_SetSource(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_RX_SOURCE);
-        DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL);
+    /* Init DMAMUX */
+    DMAMUX_Init(DEMO_DMAMUX);
+    DMAMUX_SetSource(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_TX_SOURCE);
+    DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_TX_EDMA_CHANNEL);
+    DMAMUX_SetSource(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL, (uint8_t)DEMO_SAI_RX_SOURCE);
+    DMAMUX_EnableChannel(DEMO_DMAMUX, DEMO_RX_EDMA_CHANNEL);
 
-        PRINTF("SAI example started!\n\r");
+    PRINTF("SAI example started!\n\r");
 
-        /* Init DMA and create handle for DMA */
-        EDMA_GetDefaultConfig(&dmaConfig);
-        EDMA_Init(DEMO_DMA, &dmaConfig);
-        EDMA_CreateHandle(&dmaTxHandle, DEMO_DMA, DEMO_TX_EDMA_CHANNEL);
-        EDMA_CreateHandle(&dmaRxHandle, DEMO_DMA, DEMO_RX_EDMA_CHANNEL);
-    #if defined(FSL_FEATURE_EDMA_HAS_CHANNEL_MUX) && FSL_FEATURE_EDMA_HAS_CHANNEL_MUX
-        EDMA_SetChannelMux(DEMO_DMA, DEMO_TX_EDMA_CHANNEL, DEMO_SAI_TX_EDMA_CHANNEL);
-        EDMA_SetChannelMux(DEMO_DMA, DEMO_RX_EDMA_CHANNEL, DEMO_SAI_RX_EDMA_CHANNEL);
-    #endif
+    /* Init DMA and create handle for DMA */
+    EDMA_GetDefaultConfig(&dmaConfig);
+    EDMA_Init(DEMO_DMA, &dmaConfig);
+    EDMA_CreateHandle(&dmaTxHandle, DEMO_DMA, DEMO_TX_EDMA_CHANNEL);
+    EDMA_CreateHandle(&dmaRxHandle, DEMO_DMA, DEMO_RX_EDMA_CHANNEL);
 
-        /* SAI init */
-        SAI_Init(DEMO_SAI);
+    /* SAI init */
+    SAI_Init(DEMO_SAI);
 
-        SAI_TransferTxCreateHandleEDMA(DEMO_SAI, &txHandle, tx_callback, NULL, &dmaTxHandle);
-        SAI_TransferRxCreateHandleEDMA(DEMO_SAI, &rxHandle, rx_callback, NULL, &dmaRxHandle);
+    SAI_TransferTxCreateHandleEDMA(DEMO_SAI, &txHandle, tx_callback, NULL, &dmaTxHandle);
+    SAI_TransferRxCreateHandleEDMA(DEMO_SAI, &rxHandle, rx_callback, NULL, &dmaRxHandle);
 
-        /* I2S mode configurations */
-        SAI_GetClassicI2SConfig(&config, DEMO_AUDIO_BIT_WIDTH, kSAI_Stereo, 1U << DEMO_SAI_CHANNEL);
-        config.syncMode    = DEMO_SAI_TX_SYNC_MODE;
-        config.masterSlave = DEMO_SAI_MASTER_SLAVE;
-        SAI_TransferTxSetConfigEDMA(DEMO_SAI, &txHandle, &config);
-        config.syncMode = DEMO_SAI_RX_SYNC_MODE;
-        SAI_TransferRxSetConfigEDMA(DEMO_SAI, &rxHandle, &config);
+    /* I2S mode configurations */
+    SAI_GetClassicI2SConfig(&config, DEMO_AUDIO_BIT_WIDTH, kSAI_Stereo, 1U << DEMO_SAI_CHANNEL);
+    config.syncMode    = DEMO_SAI_TX_SYNC_MODE;
+    config.masterSlave = DEMO_SAI_MASTER_SLAVE;
+    SAI_TransferTxSetConfigEDMA(DEMO_SAI, &txHandle, &config);
+    config.syncMode = DEMO_SAI_RX_SYNC_MODE;
+    SAI_TransferRxSetConfigEDMA(DEMO_SAI, &rxHandle, &config);
 
-        port_pin_config_t config_pin;
-        config_pin.slewRate = 1;
-        config_pin.pullSelect = 2;
-    //    config.mux = kPORT_MuxAlt5;
 
-        CLOCK_EnableClock(kCLOCK_PortE);
-        CLOCK_EnableClock(kCLOCK_PortC);
-    //    PORT_SetPinMux(PORTC, 1, kPORT_MuxAlt6); // TXD0
-    //    PORT_SetPinMux(PORTC, 5, kPORT_MuxAlt4); // RXD0
-    //    PORT_SetPinMux(PORTC, 6, kPORT_MuxAlt6); // MCLK
-    //    PORT_SetPinMux(PORTE, 11, kPORT_MuxAlt4); // TX_FS
-    //    PORT_SetPinMux(PORTE, 12, kPORT_MuxAlt4); // TX_BCLK
+    CLOCK_EnableClock(kCLOCK_PortE);
+    CLOCK_EnableClock(kCLOCK_PortC);
+    PORT_SetPinMux(PORTC, 1, kPORT_MuxAlt6); // TXD0
+    PORT_SetPinMux(PORTC, 5, kPORT_MuxAlt4); // RXD0
+    PORT_SetPinMux(PORTC, 6, kPORT_MuxAlt6); // MCLK
+    PORT_SetPinMux(PORTE, 11, kPORT_MuxAlt4); // TX_FS
+    PORT_SetPinMux(PORTE, 12, kPORT_MuxAlt4); // TX_BCLK
 
-        config_pin.mux = kPORT_MuxAlt6;
-        PORT_SetPinConfig(PORTC, 1, &config_pin); //TXD0
-        config_pin.mux = kPORT_MuxAlt4;
-        PORT_SetPinConfig(PORTC, 5, &config_pin); //RXD0
-        config_pin.mux = kPORT_MuxAlt6;
-        PORT_SetPinConfig(PORTC, 6, &config_pin); //MCLK
-        config_pin.mux = kPORT_MuxAlt4;
-        PORT_SetPinConfig(PORTE, 11, &config_pin); //TX_FS
-        config_pin.mux = kPORT_MuxAlt4;
-        PORT_SetPinConfig(PORTE, 12, &config_pin); //TX_BCLK
+    /* set bit clock divider */
+    SAI_TxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
+            DEMO_AUDIO_DATA_CHANNEL);
+    SAI_RxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
+            DEMO_AUDIO_DATA_CHANNEL);
 
-        /* set bit clock divider */
-        SAI_TxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
-                DEMO_AUDIO_DATA_CHANNEL);
-        SAI_RxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
-                DEMO_AUDIO_DATA_CHANNEL);
-
-        /* master clock configurations */
-        BOARD_MASTER_CLOCK_CONFIG();
+    /* master clock configurations */
+    BOARD_MASTER_CLOCK_CONFIG();
 
     xSemaphoreGive(modules_initialized);
     vTaskSuspend(NULL);
@@ -222,7 +198,30 @@ void init_modules(void * params) {
 
 void audio_codec(void *params) {
     xSemaphoreTake(modules_initialized, portMAX_DELAY);
-//    vTaskDelay(pdMS_TO_TICKS(500));
+    uint8_t data[1025];
+//    for (uint16_t addr = 0; addr < BUFFER_SIZE; addr++) {
+//        // data[addr] = addr % 0xFF;
+//        uint16_t a = addr/10;
+//        if ((a%2) == 0) {
+//            data[addr] = 0x00;
+//        } else {
+//            data[addr] = 0xFF;
+//        }
+//    }
+
+    uint16_t frec = 1;
+    uint16_t addr = 0;
+    while (addr < BUFFER_SIZE) {
+    	for (uint16_t count = 0; count < frec; count++) {
+    		data[addr] = 0x00;
+    		addr++;
+    	}
+    	for (uint16_t count = 0; count < frec; count++) {
+    		data[addr] = 0xFF;
+    		addr++;
+    	}
+    }
+
     for(;;) {
         if (emptyBlock > 0)
         {
@@ -239,7 +238,9 @@ void audio_codec(void *params) {
         }
         if (emptyBlock < BUFFER_NUMBER)
         {
-            xfer.data     = Buffer + tx_index * BUFFER_SIZE;
+            //            xfer.data     = Buffer + tx_index * BUFFER_SIZE;
+            //            xfer.dataSize = BUFFER_SIZE;
+            xfer.data = data;
             xfer.dataSize = BUFFER_SIZE;
             if (kStatus_Success == SAI_TransferSendEDMA(DEMO_SAI, &txHandle, &xfer))
             {
