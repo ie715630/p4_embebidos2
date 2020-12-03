@@ -27,7 +27,7 @@ typedef struct
 static freertos_i2c_handle_t i2c_handle = {0};
 uint8_t g_ack_received = 0;
 
-freertos_i2c_flag_t init_i2c1_with_default_config(void)
+freertos_i2c_flag_t init_I2C0_with_default_config(void)
 {
     i2c_handle.is_initialized = 0;
 
@@ -35,29 +35,40 @@ freertos_i2c_flag_t init_i2c1_with_default_config(void)
     i2c_handle.mutex = xSemaphoreCreateMutex();
     i2c_handle.transfer_sem = xSemaphoreCreateBinary();
 
-    /* Initialize pins for I2C1 */
-    CLOCK_EnableClock(kCLOCK_PortC);
+    /* Initialize pins for I2C0 */
+    CLOCK_EnableClock(kCLOCK_PortB);
 
     port_pin_config_t config;
     config.slewRate = 1;
     config.pullSelect = 2;
     config.mux = kPORT_MuxAlt2;
 
-    PORT_SetPinConfig(PORTC, 10, &config); // SCL
-    PORT_SetPinConfig(PORTC, 11, &config); // SDA
+    PORT_SetPinConfig(PORTB, 2, &config); // SCL
+    PORT_SetPinConfig(PORTB, 3, &config); // SDA
 
-
-    // pull up, slew rate, y deshabilitar params y desconectar codec
+//    static const port_pin_config_t i2c_pin_config =
+//    {
+//    kPORT_PullUp,
+//    kPORT_FastSlewRate,
+//    kPORT_PassiveFilterDisable,
+//    kPORT_OpenDrainEnable,
+//    kPORT_LowDriveStrength,
+//    kPORT_MuxAlt2,
+//    kPORT_UnlockRegister
+//    };
+//
+//	PORT_SetPinConfig(PORTB, 2, &i2c_pin_config); // SCL
+//	PORT_SetPinConfig(PORTB, 3, &i2c_pin_config); // SDA
 
 
     /* Use default config values for i2c master and enable interruption */
     i2c_master_config_t mstr_cfg;
     I2C_MasterGetDefaultConfig(&mstr_cfg);
-    I2C_MasterInit(I2C1, &mstr_cfg, CLOCK_GetFreq(I2C1_CLK_SRC));
-    NVIC_SetPriority(I2C1_IRQn, 5);
+    I2C_MasterInit(I2C0, &mstr_cfg, CLOCK_GetFreq(I2C0_CLK_SRC));
+    NVIC_SetPriority(I2C0_IRQn, 5);
 
     /* Create transfer handle */
-    I2C_MasterTransferCreateHandle(I2C1, &i2c_handle.handle, fsl_i2c_callback,
+    I2C_MasterTransferCreateHandle(I2C0, &i2c_handle.handle, fsl_i2c_callback,
             NULL);
 
     i2c_handle.is_initialized = 1;
@@ -100,7 +111,7 @@ freertos_i2c_flag_t i2c_multiple_write(uint8_t slave_addr, uint8_t * write_data,
         transfer_content.flags = kI2C_TransferDefaultFlag;
 
         xSemaphoreTake(i2c_handle.mutex, portMAX_DELAY);
-        I2C_MasterTransferNonBlocking(I2C1, &i2c_handle.handle, &transfer_content);
+        I2C_MasterTransferNonBlocking(I2C0, &i2c_handle.handle, &transfer_content);
         xSemaphoreTake(i2c_handle.transfer_sem, portMAX_DELAY);
         xSemaphoreGive(i2c_handle.mutex);
 
@@ -135,7 +146,7 @@ freertos_i2c_flag_t i2c_multiple_read(uint8_t slave_addr, uint8_t wr_command,
         wr_transfer_content.flags = kI2C_TransferNoStopFlag;
 
         xSemaphoreTake(i2c_handle.mutex, portMAX_DELAY);
-        I2C_MasterTransferNonBlocking(I2C1, &i2c_handle.handle,
+        I2C_MasterTransferNonBlocking(I2C0, &i2c_handle.handle,
                 &wr_transfer_content);
         xSemaphoreTake(i2c_handle.transfer_sem, portMAX_DELAY);
 
@@ -146,7 +157,7 @@ freertos_i2c_flag_t i2c_multiple_read(uint8_t slave_addr, uint8_t wr_command,
         rd_transfer_content.dataSize = read_size;
         rd_transfer_content.flags = kI2C_TransferRepeatedStartFlag;
 
-        I2C_MasterTransferNonBlocking(I2C1, &i2c_handle.handle,
+        I2C_MasterTransferNonBlocking(I2C0, &i2c_handle.handle,
                 &rd_transfer_content);
         xSemaphoreTake(i2c_handle.transfer_sem, portMAX_DELAY);
         xSemaphoreGive(i2c_handle.mutex);

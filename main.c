@@ -33,8 +33,8 @@
 #define DEMO_SAITxIRQHandler  I2S0_Tx_IRQHandler
 #define DEMO_SAI_TX_SYNC_MODE kSAI_ModeAsync
 #define DEMO_SAI_RX_SYNC_MODE kSAI_ModeSync
-#define DEMO_SAI_MCLK_OUTPUT  true
-#define DEMO_SAI_MASTER_SLAVE kSAI_Master
+#define DEMO_SAI_MCLK_OUTPUT  false
+#define DEMO_SAI_MASTER_SLAVE kSAI_Slave
 
 #define DEMO_DMA             DMA0
 #define DEMO_EDMA_CHANNEL    (0)
@@ -46,7 +46,7 @@
 
 #define DEMO_AUDIO_DATA_CHANNEL (1U)
 #define DEMO_AUDIO_BIT_WIDTH    kSAI_WordWidth16bits
-#define DEMO_AUDIO_SAMPLE_RATE  (3000)
+#define DEMO_AUDIO_SAMPLE_RATE  (kSAI_SampleRate48KHz)
 #define DEMO_AUDIO_MASTER_CLOCK 12288000U
 
 #define BOARD_MASTER_CLOCK_CONFIG BOARD_MasterClockConfig
@@ -107,10 +107,23 @@ sai_transfer_t xfer;
 int main(void) {
 
     /* Init board hardware. */
+	BOARD_InitPins();
+	BOARD_InitLEDsPins();
     BOARD_InitBootPins();
     BOARD_InitBootClocks();
     BOARD_InitBootPeripherals();
     BOARD_InitDebugConsole();
+
+    gpio_pin_config_t led_config = {
+        kGPIO_DigitalOutput,
+        0,
+    };
+
+    GPIO_PinInit(BOARD_LED_RED_GPIO, BOARD_LED_RED_GPIO_PIN, &led_config);
+    GPIO_PinInit(BOARD_LED_GREEN_GPIO, BOARD_LED_GREEN_GPIO_PIN, &led_config);
+
+    GPIO_PortSet(BOARD_LED_RED_GPIO, 1u << BOARD_LED_RED_GPIO_PIN);
+    GPIO_PortSet(BOARD_LED_GREEN_GPIO, 1u << BOARD_LED_GREEN_GPIO_PIN);
 
     modules_initialized= xSemaphoreCreateBinary();
 
@@ -127,15 +140,17 @@ int main(void) {
 
 void init_modules(void * params) {
 
-    init_i2c1_with_default_config();
+    init_I2C0_with_default_config();
     vTaskDelay(pdMS_TO_TICKS(100));
 
     uint8_t init_success = init_codec_i2s();
     if (!init_success) {
         PRINTF("Init error\n\r");
+        GPIO_PortClear(BOARD_LED_RED_GPIO, 1u << BOARD_LED_RED_GPIO_PIN);
     }
     else {
         PRINTF("Success\n\r");
+        GPIO_PortClear(BOARD_LED_GREEN_GPIO, 1u << BOARD_LED_GREEN_GPIO_PIN);
     }
 
     edma_config_t dmaConfig = {0};
@@ -173,11 +188,11 @@ void init_modules(void * params) {
 
     CLOCK_EnableClock(kCLOCK_PortE);
     CLOCK_EnableClock(kCLOCK_PortC);
-    PORT_SetPinMux(PORTC, 1, kPORT_MuxAlt6); // TXD0
-    PORT_SetPinMux(PORTC, 5, kPORT_MuxAlt4); // RXD0
     PORT_SetPinMux(PORTC, 6, kPORT_MuxAlt6); // MCLK
+    PORT_SetPinMux(PORTC, 1, kPORT_MuxAlt6); // TXD0
     PORT_SetPinMux(PORTE, 11, kPORT_MuxAlt4); // TX_FS
     PORT_SetPinMux(PORTE, 12, kPORT_MuxAlt4); // TX_BCLK
+    PORT_SetPinMux(PORTC, 5, kPORT_MuxAlt4); // RXD0
 
     /* set bit clock divider */
     SAI_TxSetBitClockRate(DEMO_SAI, DEMO_AUDIO_MASTER_CLOCK, DEMO_AUDIO_SAMPLE_RATE, DEMO_AUDIO_BIT_WIDTH,
@@ -198,29 +213,20 @@ void init_modules(void * params) {
 
 void audio_codec(void *params) {
     xSemaphoreTake(modules_initialized, portMAX_DELAY);
-    uint8_t data[1025];
-//    for (uint16_t addr = 0; addr < BUFFER_SIZE; addr++) {
-//        // data[addr] = addr % 0xFF;
-//        uint16_t a = addr/10;
-//        if ((a%2) == 0) {
-//            data[addr] = 0x00;
-//        } else {
-//            data[addr] = 0xFF;
-//        }
-//    }
+    uint8_t data[1025] = {0};
 
-    uint16_t frec = 1;
-    uint16_t addr = 0;
-    while (addr < BUFFER_SIZE) {
-    	for (uint16_t count = 0; count < frec; count++) {
-    		data[addr] = 0x00;
-    		addr++;
-    	}
-    	for (uint16_t count = 0; count < frec; count++) {
-    		data[addr] = 0xFF;
-    		addr++;
-    	}
-    }
+//    uint16_t frec = 1;
+//    uint16_t addr = 0;
+//    while (addr < BUFFER_SIZE) {
+//    	for (uint16_t count = 0; count < frec; count++) {
+//    		data[addr] = 0x00;
+//    		addr++;
+//    	}
+//    	for (uint16_t count = 0; count < frec; count++) {
+//    		data[addr] = 0x1;
+//    		addr++;
+//    	}
+//    }
 
     for(;;) {
         if (emptyBlock > 0)
@@ -238,8 +244,8 @@ void audio_codec(void *params) {
         }
         if (emptyBlock < BUFFER_NUMBER)
         {
-            //            xfer.data     = Buffer + tx_index * BUFFER_SIZE;
-            //            xfer.dataSize = BUFFER_SIZE;
+//			xfer.data     = Buffer + tx_index * BUFFER_SIZE;
+//			xfer.dataSize = BUFFER_SIZE;
             xfer.data = data;
             xfer.dataSize = BUFFER_SIZE;
             if (kStatus_Success == SAI_TransferSendEDMA(DEMO_SAI, &txHandle, &xfer))
