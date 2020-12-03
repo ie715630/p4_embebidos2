@@ -17,6 +17,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "WM8731.h"
+#include "filters.h"
 #include "fsl_sai.h"
 #include "fsl_dmamux.h"
 #include "fsl_gpio.h"
