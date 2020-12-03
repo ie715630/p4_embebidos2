@@ -17,7 +17,7 @@
 #define BLOCK_SIZE    		153
 #define NUM_TAPS         	150
 
-const float64_t lowPass[NUM_TAPS] = {
+const float64_t FIR_lowPass[NUM_TAPS] = {
   -0.005107942637335911,
   -0.000882847611705671,
   -0.0009499538742000041,
@@ -170,7 +170,7 @@ const float64_t lowPass[NUM_TAPS] = {
   -0.005107942637335911
 };
 
-const float64_t bandPass[NUM_TAPS] = {
+const float64_t FIR_bandPass[NUM_TAPS] = {
   0.004084576450986212,
   0.0029644932884568824,
   0.002911226815740862,
@@ -323,7 +323,7 @@ const float64_t bandPass[NUM_TAPS] = {
   0.004084576450986212
 };
 
-const float64_t highPass[NUM_TAPS] = {
+const float64_t FIR_highPass[NUM_TAPS] = {
   -0.0000023474138927870026,
   -0.000005982666319828465,
   -0.00000907075654818391,
@@ -475,7 +475,6 @@ const float64_t highPass[NUM_TAPS] = {
   -0.0000023474138927870026
   -0.0000023474138927870026
 };
-
 
 void initialize_fir(arm_fir_instance_f32* S, float32_t* coeffs, float32_t* state);
 
