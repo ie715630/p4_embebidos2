@@ -17,7 +17,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "WM8731.h"
-#include "filters.h"
 #include "fsl_sai.h"
 #include "fsl_dmamux.h"
 #include "fsl_gpio.h"
@@ -34,8 +33,8 @@
 #define DEMO_SAITxIRQHandler  I2S0_Tx_IRQHandler
 #define DEMO_SAI_TX_SYNC_MODE kSAI_ModeAsync
 #define DEMO_SAI_RX_SYNC_MODE kSAI_ModeSync
-#define DEMO_SAI_MCLK_OUTPUT  false
-#define DEMO_SAI_MASTER_SLAVE kSAI_Slave
+#define DEMO_SAI_MCLK_OUTPUT  true
+#define DEMO_SAI_MASTER_SLAVE kSAI_Master
 
 #define DEMO_DMA             DMA0
 #define DEMO_EDMA_CHANNEL    (0)
@@ -216,19 +215,6 @@ void audio_codec(void *params) {
     xSemaphoreTake(modules_initialized, portMAX_DELAY);
     uint8_t data[1025] = {0};
 
-//    uint16_t frec = 1;
-//    uint16_t addr = 0;
-//    while (addr < BUFFER_SIZE) {
-//    	for (uint16_t count = 0; count < frec; count++) {
-//    		data[addr] = 0x00;
-//    		addr++;
-//    	}
-//    	for (uint16_t count = 0; count < frec; count++) {
-//    		data[addr] = 0x1;
-//    		addr++;
-//    	}
-//    }
-
     for(;;) {
         if (emptyBlock > 0)
         {
@@ -245,10 +231,8 @@ void audio_codec(void *params) {
         }
         if (emptyBlock < BUFFER_NUMBER)
         {
-//			xfer.data     = Buffer + tx_index * BUFFER_SIZE;
-//			xfer.dataSize = BUFFER_SIZE;
-            xfer.data = data;
-            xfer.dataSize = BUFFER_SIZE;
+			xfer.data     = Buffer + tx_index * BUFFER_SIZE;
+			xfer.dataSize = BUFFER_SIZE;
             if (kStatus_Success == SAI_TransferSendEDMA(DEMO_SAI, &txHandle, &xfer))
             {
                 tx_index++;
