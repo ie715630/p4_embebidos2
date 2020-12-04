@@ -24,6 +24,7 @@
 #include "fsl_sai_edma.h"
 #include "fsl_uart.h"
 #include "string.h"
+#include "filters.h"
 /* TODO: insert other definitions and declarations here. */
 
 /* SAI and I2C instance and clock */
@@ -59,6 +60,16 @@
 #define DEMO_UART          UART0
 
 char* str;
+char filter_data[3];
+
+const char* ENABLE_LP = "LPE";
+const char* ENABLE_HP = "HPE";
+const char* ENABLE_BP = "BPE";
+const char* DISABLE_LP = "LPD";
+const char* DISABLE_HP = "HPD";
+const char* DISABLE_BP = "BPD";
+
+uint32_t rxBuffer = 0;
 
 void BOARD_MasterClockConfig(void);
 
@@ -258,6 +269,7 @@ void audio_codec(void *params) {
 
 void init_uart(void)
 {
+	init_filters(Buffer);
 	static uart_config_t config;
 	UART_GetDefaultConfig(&config);
 	config.baudRate_Bps = 115200;

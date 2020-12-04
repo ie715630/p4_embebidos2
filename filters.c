@@ -10,6 +10,10 @@
 
 uint32_t numBlocks = LENGTH_SAMPLES/BLOCK_SIZE;
 uint32_t blockSize = BLOCK_SIZE;
+static float32_t sysOut[LENGTH_SAMPLES];
+
+arm_fir_instance_f32 S[3];
+static float32_t firState[3][BLOCK_SIZE + NUM_TAPS - 1];
 
 const float64_t FIR_LPass[NUM_TAPS] = {
 		0.0008,
@@ -323,6 +327,8 @@ const float64_t FIR_HPass[NUM_TAPS] = {
 		-0.0005,
 };
 
+float32_t *input, *output;
+
 void initialize_fir_lowpass(arm_fir_instance_f32* S, float32_t* state)
 {
 	arm_fir_init_f32(S, NUM_TAPS, (float32_t *)&FIR_LPass[0], state, blockSize);
@@ -351,4 +357,46 @@ void call_fir_bandpass(arm_fir_instance_f32* S, float32_t* ptr_src, float32_t* p
 void call_fir_highpass(arm_fir_instance_f32* S, float32_t* ptr_src, float32_t* ptr_dst)
 {
 	arm_fir_f32(S, ptr_src, ptr_dst, blockSize);
+}
+
+
+void init_filters(uint32_t *buffer)
+{
+	input = (float32_t*)buffer;
+	output = sysOut;
+	initialize_fir_lowpass(&S[1], &firState[0][0]);
+	initialize_fir_highpass(&S[2], &firState[1][0]);
+	initialize_fir_bandpass(&S[3], &firState[2][0]);
+}
+
+void apply_filter(uint8_t select)
+{
+    switch(select){
+        case 1:
+        	  for(int i=0; i < numBlocks; i++)
+        	  {
+        		  call_fir_lowpass(&S[0], input + (i+BLOCK_SIZE), output + (i+BLOCK_SIZE));
+        	  }
+            break;
+        case 2:
+			  for(int i=0; i < numBlocks; i++)
+			  {
+				  call_fir_highpass(&S[1], input + (i+BLOCK_SIZE), output + (i+BLOCK_SIZE));
+			  }
+            break;
+        case 3:
+			  for(int i=0; i < numBlocks; i++)
+			  {
+				  call_fir_bandpass(&S[2], input + (i+BLOCK_SIZE), output + (i+BLOCK_SIZE));
+			  }
+            break;
+        case 4:
+			  for(int i=0; i < numBlocks; i++)
+			  {
+				  output[i] = input[i];
+			  }
+			break;
+        default:
+            break;
+    }
 }
