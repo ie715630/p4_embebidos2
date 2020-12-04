@@ -23,6 +23,7 @@
 #include "fsl_port.h"
 #include "fsl_sai_edma.h"
 #include "fsl_uart.h"
+#include "string.h"
 /* TODO: insert other definitions and declarations here. */
 
 /* SAI and I2C instance and clock */
@@ -57,6 +58,14 @@
 #define DEMO_UART_CLK_FREQ CLOCK_GetFreq(SYS_CLK)
 #define DEMO_UART          UART0
 
+const char* LP_ENABLE = "LPE";
+const char* HP_ENABLE = "HPE";
+const char* BP_ENABLE = "BPE";
+const char* LP_DISABLE = "LPD";
+const char* HP_DISABLE = "HPD";
+const char* BP_DISABLE = "BPD";
+
+char* filter_data;
 
 void BOARD_MasterClockConfig(void);
 
@@ -254,7 +263,6 @@ void audio_codec(void *params) {
     }
 }
 
-uint8_t *filter_data = 0;
 void uart_inst(void *parameters)
 {
 
@@ -263,8 +271,8 @@ void uart_inst(void *parameters)
 	for(;;)
 	{
 		/* Tomar datos de la uart*/
-		UART_ReadBlocking(DEMO_UART, filter_data, 3);
-		vTaskDelay(pdMS_TO_TICKS(300));
+//		UART_ReadBlocking(DEMO_UART, filter_data, 3);
+//		vTaskDelay(pdMS_TO_TICKS(300));
 	}
 }
 
@@ -287,9 +295,32 @@ void init_uart(void)
 	do{
 		UART_ReadBlocking(DEMO_UART, &ch, 1);
 		UART_WriteBlocking(DEMO_UART,&ch, 1);
-		*(filter_data+i) = ch;
+		filter_data[i] = ch;
 		i++;
 	} while(i < 3);
+	if(strcmp(LP_ENABLE, filter_data)==0)
+	{
 
+	}
+	else if(strcmp(HP_ENABLE, filter_data)==0)
+	{
+
+	}
+	else if(strcmp(BP_ENABLE, filter_data)==0)
+	{
+
+	}
+	else if(strcmp(LP_DISABLE, filter_data)==0)
+	{
+
+	}
+	else if(strcmp(HP_DISABLE, filter_data)==0)
+	{
+
+	}
+	else if(strcmp(BP_DISABLE, filter_data)==0)
+	{
+
+	}
 }
 
