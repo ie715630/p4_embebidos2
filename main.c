@@ -22,6 +22,7 @@
 #include "fsl_gpio.h"
 #include "fsl_port.h"
 #include "fsl_sai_edma.h"
+#include "fsl_uart.h"
 /* TODO: insert other definitions and declarations here. */
 
 /* SAI and I2C instance and clock */
@@ -53,6 +54,10 @@
 #define BUFFER_SIZE   (1024U)
 #define BUFFER_NUMBER (2U) // 2 for TX 2 for RX
 
+#define DEMO_UART_CLK_FREQ CLOCK_GetFreq(SYS_CLK)
+#define DEMO_UART          UART0
+
+
 void BOARD_MasterClockConfig(void);
 
 sai_master_clock_t mclkConfig;
@@ -68,6 +73,7 @@ SemaphoreHandle_t modules_initialized;
 
 void init_modules(void * params);
 void audio_codec(void *params);
+void init_uart(void);
 
 void BOARD_MasterClockConfig(void)
 {
@@ -127,8 +133,11 @@ int main(void) {
 
     modules_initialized= xSemaphoreCreateBinary();
 
+
     xTaskCreate(init_modules, "Init", 300, NULL, 1, NULL);
     xTaskCreate(audio_codec, "Codec", 300, NULL, 2, NULL);
+
+    init_uart();
 
     vTaskStartScheduler();
 
@@ -245,4 +254,42 @@ void audio_codec(void *params) {
     }
 }
 
+uint8_t *filter_data = 0;
+void uart_inst(void *parameters)
+{
+
+//	xSemaphoreTake(uart_sem, portMAX_DELAY);
+
+	for(;;)
+	{
+		/* Tomar datos de la uart*/
+		UART_ReadBlocking(DEMO_UART, filter_data, 3);
+		vTaskDelay(pdMS_TO_TICKS(300));
+	}
+}
+
+void init_uart(void)
+{
+	static uart_config_t config;
+	UART_GetDefaultConfig(&config);
+	config.baudRate_Bps = 115200;
+	config.enableTx     = true;
+	config.enableRx     = true;
+
+	UART_Init(DEMO_UART, &config, DEMO_UART_CLK_FREQ);
+
+	uint8_t txbuff[]   = "Practica 4 - Kevin Diaz de Sandi / Sergio Mendez\r\nFiltros\r\n\r\nPasa Bajas (LP)\n\rPasa Altas (HP)\n\rPasa Bandas (BP)\r\n";
+	UART_WriteBlocking(DEMO_UART, txbuff, sizeof(txbuff) - 1);
+
+	/* Tomar datos de la uart*/
+	uint8_t i = 0;
+	uint8_t ch;
+	do{
+		UART_ReadBlocking(DEMO_UART, &ch, 1);
+		UART_WriteBlocking(DEMO_UART,&ch, 1);
+		*(filter_data+i) = ch;
+		i++;
+	} while(i < 3);
+
+}
 
