@@ -58,13 +58,6 @@
 #define DEMO_UART_CLK_FREQ CLOCK_GetFreq(SYS_CLK)
 #define DEMO_UART          UART0
 
-const char* LP_ENABLE = "LPE";
-const char* HP_ENABLE = "HPE";
-const char* BP_ENABLE = "BPE";
-const char* LP_DISABLE = "LPD";
-const char* HP_DISABLE = "HPD";
-const char* BP_DISABLE = "BPD";
-
 char* filter_data;
 
 void BOARD_MasterClockConfig(void);
@@ -285,27 +278,27 @@ void init_uart(void)
 		filter_data[i] = ch;
 		i++;
 	} while(i < 3);
-	if(strcmp(LP_ENABLE, filter_data)==0)
+	if(strcmp("1", filter_data)==0)
 	{
 
 	}
-	else if(strcmp(HP_ENABLE, filter_data)==0)
+	else if(strcmp("2", filter_data)==0)
 	{
 
 	}
-	else if(strcmp(BP_ENABLE, filter_data)==0)
+	else if(strcmp("3", filter_data)==0)
 	{
 
 	}
-	else if(strcmp(LP_DISABLE, filter_data)==0)
+	else if(strcmp("4", filter_data)==0)
 	{
 
 	}
-	else if(strcmp(HP_DISABLE, filter_data)==0)
+	else if(strcmp("5", filter_data)==0)
 	{
 
 	}
-	else if(strcmp(BP_DISABLE, filter_data)==0)
+	else if(strcmp("6", filter_data)==0)
 	{
 
 	}
