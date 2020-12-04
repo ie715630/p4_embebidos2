@@ -263,19 +263,6 @@ void audio_codec(void *params) {
     }
 }
 
-void uart_inst(void *parameters)
-{
-
-//	xSemaphoreTake(uart_sem, portMAX_DELAY);
-
-	for(;;)
-	{
-		/* Tomar datos de la uart*/
-//		UART_ReadBlocking(DEMO_UART, filter_data, 3);
-//		vTaskDelay(pdMS_TO_TICKS(300));
-	}
-}
-
 void init_uart(void)
 {
 	static uart_config_t config;
@@ -286,7 +273,7 @@ void init_uart(void)
 
 	UART_Init(DEMO_UART, &config, DEMO_UART_CLK_FREQ);
 
-	uint8_t txbuff[]   = "Practica 4 - Kevin Diaz de Sandi / Sergio Mendez\r\nFiltros\r\n\r\nPasa Bajas (LP)\n\rPasa Altas (HP)\n\rPasa Bandas (BP)\r\n";
+	uint8_t txbuff[]   = "Filtros\r\n\r\nPasa Bajas\n\rPasa Altas\n\rPasa Bandas\r\n";
 	UART_WriteBlocking(DEMO_UART, txbuff, sizeof(txbuff) - 1);
 
 	/* Tomar datos de la uart*/
