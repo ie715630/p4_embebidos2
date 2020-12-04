@@ -38,7 +38,6 @@ uint8_t init_codec_i2s() {
     }
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    // i2c_data[0] = WM8731_REG_LLINE_IN << 1;
     i2c_data[0] = 1;
     i2c_data[1] = WM8731_LINE_IN_LEFT;
     transfer_result = i2c_multiple_write(DEVICE_ADDR, i2c_data, 2);
@@ -72,7 +71,7 @@ uint8_t init_codec_i2s() {
     vTaskDelay(pdMS_TO_TICKS(10));
 
     i2c_data[0] = WM8731_REG_ANALOG_PATH << 1;
-    i2c_data[1] = WM8731_ANALOG_AUDIO_BYPASS;
+    i2c_data[1] = WM8731_ANALOG_AUDIO_LINE;
     transfer_result = i2c_multiple_write(DEVICE_ADDR, i2c_data, 2);
     if (transfer_result == freertos_i2c_fail) {
     	return 0;

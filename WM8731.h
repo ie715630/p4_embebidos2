@@ -28,16 +28,15 @@
 
 /* WM8731 sound chip constants (for default set up) */
 #define WM8731_RESET 0x0000 // Reset value
-#define WM8731_LINE_IN_LEFT 0x0117 // LLI settings: Enable simultaneous load to left and right channels, Vol 0 dB
-#define WM8731_LINE_IN_RIGHT 0x0117 // RLI settings: Enable simultaneous load to left and right channels, Vol 0 dB
-#define WM8731_HP_LEFT 0x0179 // Headphone settings : -9dB output, Enable simultaneous load to left and right channels
-#define WM8731_HP_RIGHT 0x0179 // Headphone settings : -9dB output, Enable simultaneous load to left and right channels
+#define WM8731_LINE_IN_LEFT 0x17 // LLI settings: Enable simultaneous load to left and right channels, Vol 0 dB
+#define WM8731_LINE_IN_RIGHT 0x17 // RLI settings: Enable simultaneous load to left and right channels, Vol 0 dB
+#define WM8731_HP_LEFT 0x79 // Headphone settings : -9dB output, Enable simultaneous load to left and right channels
+#define WM8731_HP_RIGHT 0x79 // Headphone settings : -9dB output, Enable simultaneous load to left and right channels
 #define WM8731_ANALOG_AUDIO_BYPASS 0x0008 // Bypass Line In
 #define WM8731_ANALOG_AUDIO_LINE 0x0012 // Line In -> ADC
 #define WM8731_DIGITAL_AUDIO 0x0000
 #define WM8731_POWER_MODE 0x0000 // Disable Power down
 #define WM8731_DA_INTERFACE 0x0053 // Enable Master Mode and 32bit data
-// #define WM8731_DA_INTERFACE_I2S 0b0000000001011010
 #define WM8731_DA_INTERFACE_I2S 0b0000000000010010
 #define WM8731_SAMPLING 0x0000 // 48kHz, MCLK=12.288MHz
 #define WM8731_ACTIVATE 0x0001 // Module is ON
