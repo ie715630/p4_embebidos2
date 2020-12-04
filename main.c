@@ -58,7 +58,7 @@
 #define DEMO_UART_CLK_FREQ CLOCK_GetFreq(SYS_CLK)
 #define DEMO_UART          UART0
 
-char* filter_data;
+char* str;
 
 void BOARD_MasterClockConfig(void);
 
@@ -271,34 +271,33 @@ void init_uart(void)
 
 	/* Tomar datos de la uart*/
 	uint8_t i = 0;
-	uint8_t ch;
-	do{
-		UART_ReadBlocking(DEMO_UART, &ch, 1);
-		UART_WriteBlocking(DEMO_UART,&ch, 1);
-		filter_data[i] = ch;
-		i++;
-	} while(i < 3);
-	if(strcmp("1", filter_data)==0)
+	uint8_t car;
+	UART_ReadBlocking(DEMO_UART, &car, 1);
+	str[0] = car;
+	UART_WriteBlocking(DEMO_UART,&car, 1);
+
+
+	if(strcmp("1", str)==0)
 	{
 
 	}
-	else if(strcmp("2", filter_data)==0)
+	else if(strcmp("2", str)==0)
 	{
 
 	}
-	else if(strcmp("3", filter_data)==0)
+	else if(strcmp("3", str)==0)
 	{
 
 	}
-	else if(strcmp("4", filter_data)==0)
+	else if(strcmp("4", str)==0)
 	{
 
 	}
-	else if(strcmp("5", filter_data)==0)
+	else if(strcmp("5", str)==0)
 	{
 
 	}
-	else if(strcmp("6", filter_data)==0)
+	else if(strcmp("6", str)==0)
 	{
 
 	}
